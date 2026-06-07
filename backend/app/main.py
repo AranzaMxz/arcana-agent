@@ -10,6 +10,7 @@ Phase orchestration:
 
 import asyncio
 import logging
+import os
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -27,6 +28,14 @@ from app.observer.browser_manager import BrowserManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
 logger = logging.getLogger(__name__)
+
+# Warn loudly if uvicorn's reloader spawned this process — Playwright GUI
+# windows won't open from inside a reload subprocess on Windows.
+if os.environ.get("WATCHFILES_FORCE_POLLING") or os.environ.get("WEB_CONCURRENCY"):
+    logger.warning(
+        "⚠  Reload/worker mode detected. Playwright browser windows may not open. "
+        "Start with: uvicorn app.main:app --port 8000  (no --reload flag)"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -258,12 +267,10 @@ async def execute(session_id: str, body: ExecuteRequest):
     url_a = body.url_a or state.url_a
     url_b = body.url_b or state.url_b
 
-    # Open a fresh Playwright browser for Phase III
+    # Open a fresh Playwright browser for Phase III (reuses same channel logic)
+    from app.observer.browser_manager import _launch_browser
     pw      = await async_playwright().start()
-    browser = await pw.chromium.launch(
-        headless=False,
-        args=["--disable-blink-features=AutomationControlled"],
-    )
+    browser = await _launch_browser(pw)
     context = await browser.new_context()
     page_a  = await context.new_page()
     page_b  = await context.new_page()
@@ -300,6 +307,16 @@ async def health():
 # ─────────────────────────────────────────────────────────────────────────────
 # Entry point
 # ─────────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Frontend — MUST be mounted LAST so API routes are checked first.
+# Mount("/") at any earlier position would intercept all POST/WS requests.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_FRONTEND_DIR = Path(__file__).parent.parent.parent / "frontend"
+if _FRONTEND_DIR.exists():
+    app.mount("/", StaticFiles(directory=str(_FRONTEND_DIR), html=True), name="frontend")
+
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=False)

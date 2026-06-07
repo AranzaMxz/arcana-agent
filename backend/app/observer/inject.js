@@ -121,28 +121,52 @@
   // ═══════════════════════════════════════════════════════════════════════════
 
   // ── copy ──────────────────────────────────────────────────────────────────
-  // Relaxed tag check: user may copy from a <td> or <span> in System A.
+  // Two strategies so we capture both standard pages and rich web apps
+  // (e.g. Google Sheets) that write to the clipboard programmatically
+  // instead of using a text selection.
   document.addEventListener('copy', function () {
-    const selected = window.getSelection ? window.getSelection().toString().trim() : '';
-    if (!selected) return;
-
     const el = document.activeElement;
-    if (!isMeaningfulElement(el)) return;
 
-    // Mark the active focus session as having had a copy
     if (currentFocusEl) {
       const s = focusSessions.get(currentFocusEl);
       if (s) s.hadCopyPaste = true;
     }
 
-    emit({ event: 'copy', value: selected, context: buildContext(el) });
+    // Strategy 1 — text selection (works for normal web pages, <span>, <td>, etc.)
+    const selected = window.getSelection ? window.getSelection().toString().trim() : '';
+    if (selected) {
+      emit({ event: 'copy', value: selected, context: buildContext(el) });
+      return;
+    }
+
+    // Strategy 2 — async clipboard read (Google Sheets sets the clipboard
+    // programmatically; window.getSelection() is empty in that case).
+    // We wait 80 ms so the app's own copy handler finishes writing first.
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      var snapEl = el; // capture before the timeout fires
+      setTimeout(function () {
+        navigator.clipboard.readText().then(function (text) {
+          text = (text || '').trim();
+          if (text) emit({ event: 'copy', value: text, context: buildContext(snapEl) });
+        }).catch(function () { /* clipboard-read permission unavailable — skip */ });
+      }, 80);
+    }
   }, true);
 
   // ── paste ─────────────────────────────────────────────────────────────────
-  // Must land on a form field (Layer 1 enforced).
+  // Accepts standard form fields AND contenteditable elements (Google Sheets
+  // edit cells use contenteditable divs, not <input> elements).
+  function isPasteTarget(el) {
+    if (!el || !el.tagName) return false;
+    if (isFormField(el)) return true;
+    if (el.isContentEditable) return true;
+    var role = el.getAttribute && el.getAttribute('role');
+    return role === 'textbox' || role === 'gridcell';
+  }
+
   document.addEventListener('paste', function (e) {
     const el = document.activeElement;
-    if (!isFormField(el)) return;
+    if (!isPasteTarget(el)) return;
 
     const value = ((e.clipboardData || window.clipboardData).getData('text') || '').trim();
     if (!value) return;
@@ -200,5 +224,9 @@
   document.addEventListener('focusout', function (e) {
     if (e.target === currentFocusEl) currentFocusEl = null;
   }, true);
+
+  // ── Ready signal ──────────────────────────────────────────────────────────
+  // Confirms to Python that inject.js loaded and __arcana_push__ is wired up.
+  emit({ event: 'inject_ready', value: window.location.href, context: buildContext(document.activeElement) });
 
 })();

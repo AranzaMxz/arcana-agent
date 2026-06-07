@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARCANA — Autonomous Relational Cognitive Navigation Agent</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+    <!-- ── Top header + phase status bar ── -->
+    <header id="header">
+        <div class="brand">
+            <span class="brand-name">ARCANA</span>
+            <span class="brand-sub">Autonomous Relational Cognitive Navigation Agent</span>
+        </div>
+        <div id="phase-bar">
+            <div class="phase-dot"></div>
+            <span id="phase-text">Waiting for session…</span>
+        </div>
+    </header>
+
+    <!-- ── Two-column main layout ── -->
+    <div id="main">
+
+        <!-- ── Left panel: controls + live event feed ── -->
+        <aside id="left-panel">
+            <div id="controls">
+
+                <span class="ctrl-label">System A — Source URL</span>
+                <input
+                    id="url-a"
+                    class="ctrl-input"
+                    type="text"
+                    placeholder="https://source-system.com/…"
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+
+                <span class="ctrl-label">System B — Destination URL</span>
+                <input
+                    id="url-b"
+                    class="ctrl-input"
+                    type="text"
+                    placeholder="http://localhost:8000/mock/…"
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+
+                <!-- Pair presets -->
+                <div class="pair-btns">
+                    <button id="pair-a-btn" class="btn-pair" title="saucedemo.com → Arca order form">
+                        ▸ Pair A
+                    </button>
+                    <button id="pair-b-btn" class="btn-pair" title="automationexercise.com → Inventory form">
+                        ▸ Pair B
+                    </button>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="action-btns">
+                    <button id="start-btn" class="btn btn-start">
+                        ● Start Observation
+                    </button>
+                    <button id="learn-btn" class="btn btn-learn" disabled>
+                        ◈ Stop &amp; Learn
+                    </button>
+                    <button id="exec-btn" class="btn btn-execute" disabled>
+                        ▶ Execute Autonomously
+                    </button>
+                </div>
+
+            </div><!-- /controls -->
+
+            <!-- Live event feed -->
+            <div id="feed-container">
+                <div class="panel-header">Live Event Feed</div>
+                <div id="event-feed" role="log" aria-live="polite"></div>
+            </div>
+
+        </aside><!-- /left-panel -->
+
+        <!-- ── Right panel: rule graph + execution log ── -->
+        <section id="right-panel">
+
+            <!-- Rule Graph — the centrepiece -->
+            <div id="rule-graph-panel">
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-glyph">◈</div>
+                    <p>
+                        The <strong>Rule Graph</strong> will appear here once ARCANA finishes
+                        analyzing the observation session.<br><br>
+                        Start by entering both system URLs, click
+                        <strong>Start Observation</strong>, perform the mapping manually,
+                        then click <strong>Stop &amp; Learn</strong>.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Execution log — shown during Phase III -->
+            <div id="exec-panel">
+                <div class="panel-header">Execution Log</div>
+                <div id="exec-log" role="log" aria-live="polite"></div>
+            </div>
+
+        </section><!-- /right-panel -->
+    </div><!-- /main -->
+
+    <!-- Narration banner — slides in when ARCANA speaks -->
+    <div id="narration-bar" role="status" aria-live="assertive">
+        <span class="nar-icon">◉</span>
+        <span class="nar-text" id="narration-text"></span>
+    </div>
+
+</div><!-- /app -->
+
+<script src="app.js"></script>
+</body>
+</html>

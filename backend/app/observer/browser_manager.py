@@ -13,6 +13,37 @@ _COPY_WINDOW_SECS = 5.0
 _CLEANUP_INTERVAL_SECS = 2.0
 
 
+_LAUNCH_ARGS = [
+    "--disable-blink-features=AutomationControlled",
+    "--start-maximized",
+    "--remote-debugging-port=9222",
+]
+
+async def _launch_browser(pw):
+    """
+    Try each channel in order so we use whatever browser is already installed.
+    'chrome'  → Google Chrome  (most common on Windows)
+    'msedge'  → Microsoft Edge (pre-installed on Windows 11)
+    fallback  → Playwright's own Chromium (requires: playwright install chromium)
+    """
+    for channel in ("chrome", "msedge"):
+        try:
+            browser = await pw.chromium.launch(
+                headless=False,
+                channel=channel,
+                args=_LAUNCH_ARGS,
+            )
+            return browser
+        except Exception:
+            pass  # channel not installed, try next
+
+    # Last resort: Playwright's bundled Chromium
+    return await pw.chromium.launch(
+        headless=False,
+        args=_LAUNCH_ARGS,
+    )
+
+
 class BrowserManager:
     """
     Opens a two-tab Playwright session (System A + System B), injects the
@@ -56,14 +87,22 @@ class BrowserManager:
         self._pair_counter = 0
 
         self._playwright = await async_playwright().start()
-        self._browser = await self._playwright.chromium.launch(
-            headless=False,
-            args=["--disable-blink-features=AutomationControlled"],
-        )
+        self._browser = await _launch_browser(self._playwright)
         self._context = await self._browser.new_context(
-            # Clipboard read/write permissions required for copy/paste events
+            # Clipboard read/write required for the async clipboard fallback in inject.js
+            # (used when the source app — e.g. Google Sheets — sets clipboard
+            # programmatically rather than via a text selection).
             permissions=["clipboard-read", "clipboard-write"],
         )
+        # Grant clipboard permissions explicitly for Google domains so the
+        # navigator.clipboard.readText() call inside inject.js doesn't throw.
+        for origin in ["https://docs.google.com", "https://sheets.google.com"]:
+            try:
+                await self._context.grant_permissions(
+                    ["clipboard-read", "clipboard-write"], origin=origin
+                )
+            except Exception:
+                pass  # origin not loaded yet — permissions apply on first navigation
 
         self.page_a = await self._context.new_page()
         self.page_b = await self._context.new_page()
@@ -135,16 +174,29 @@ class BrowserManager:
         context: dict = dict(event_data.get("context") or {})
         context["system"] = system
 
+        # Confirm inject.js is alive — show in feed but don't treat as a mapping event
+        if event_type == "inject_ready":
+            await self._broadcast({
+                "type": "observation_event",
+                "event": "inject_ready",
+                "system": system,
+                "message": f"inject.js ready on {system}",
+            })
+            return
+
         if not value:
             return
 
         # Broadcast observation to frontend so the live feed stays active
+        field = context.get("label") or context.get("name") or context.get("id") or "?"
+        short_val = value[:40] + ("…" if len(value) > 40 else "")
         await self._broadcast({
-            "type": "observation",
+            "type": "observation_event",
             "event": event_type,
             "value": value,
             "system": system,
-            "field": context.get("name") or context.get("id") or context.get("label") or "?",
+            "field": field,
+            "message": f"[{system}] {event_type}: '{short_val}' in '{field}'",
         })
 
         # ── Cross-tab correlation ──────────────────────────────────────────
