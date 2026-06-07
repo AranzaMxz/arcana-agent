@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>inject.js Test Harness</title>
+  <style>
+    body { font-family: monospace; display: flex; gap: 24px; padding: 24px; background: #0d1117; color: #c9d1d9; }
+    .panel { flex: 1; }
+    h2 { color: #58a6ff; margin-top: 0; }
+    label { display: block; margin-top: 16px; color: #8b949e; font-size: 12px; }
+    input, textarea, select {
+      display: block; width: 100%; padding: 8px; margin-top: 4px;
+      background: #161b22; border: 1px solid #30363d; color: #c9d1d9;
+      border-radius: 4px; font-family: monospace; box-sizing: border-box;
+    }
+    .checklist { margin-top: 24px; }
+    .check { display: flex; align-items: flex-start; gap: 8px; margin: 8px 0; font-size: 13px; }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: bold; white-space: nowrap;
+    }
+    .pending  { background: #21262d; color: #8b949e; }
+    .pass     { background: #1a4a2e; color: #56d364; }
+    .fail     { background: #4a1a1a; color: #f85149; }
+
+    #event-log {
+      height: 480px; overflow-y: auto; background: #161b22;
+      border: 1px solid #30363d; border-radius: 4px; padding: 8px;
+      font-size: 12px;
+    }
+    .event-entry { margin-bottom: 6px; border-left: 3px solid #30363d; padding-left: 8px; }
+    .event-entry.copy   { border-color: #d29922; }
+    .event-entry.paste  { border-color: #388bfd; }
+    .event-entry.input  { border-color: #3fb950; }
+    .event-entry.change { border-color: #bc8cff; }
+    .event-type { font-weight: bold; text-transform: uppercase; font-size: 10px; }
+    .event-val  { color: #79c0ff; }
+    .event-meta { color: #6e7681; font-size: 11px; }
+    #clear-btn {
+      margin-top: 8px; padding: 4px 12px; background: #21262d;
+      border: 1px solid #30363d; color: #c9d1d9; cursor: pointer; border-radius: 4px;
+    }
+    .price-display { margin-top: 16px; padding: 12px; background: #161b22; border: 1px solid #30363d; border-radius: 4px; }
+    .price-display span { color: #79c0ff; font-size: 18px; font-weight: bold; user-select: all; }
+    .hint { font-size: 11px; color: #6e7681; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ── LEFT: Form under test ── -->
+<div class="panel">
+  <h2>Form Fields (interact here)</h2>
+
+  <label for="f-name">Product Name</label>
+  <input id="f-name" name="product_name" type="text" placeholder="Enter product name">
+
+  <label for="f-qty">Quantity</label>
+  <input id="f-qty" name="quantity" type="number" placeholder="0">
+
+  <label for="f-price">Unit Price</label>
+  <input id="f-price" name="unit_price" type="text" placeholder="0.00">
+
+  <label for="f-notes">Notes</label>
+  <textarea id="f-notes" name="notes" rows="3" placeholder="Optional notes"></textarea>
+
+  <label for="f-category">Category</label>
+  <select id="f-category" name="category">
+    <option value="">-- select --</option>
+    <option value="beverages">Beverages</option>
+    <option value="snacks">Snacks</option>
+    <option value="dairy">Dairy</option>
+  </select>
+
+  <!-- Simulated "System A" display value — tests relaxed copy check -->
+  <div class="price-display">
+    <div style="color:#8b949e; font-size:12px;">Displayed price (not an input — select and copy this):</div>
+    <span id="display-price">$150.50</span>
+    <div class="hint">Highlight "$150.50" above and Ctrl+C — should emit a copy event.</div>
+  </div>
+
+  <div class="checklist">
+    <h2 style="margin-top:24px;">Layer Checks</h2>
+
+    <div class="check">
+      <span id="chk-layer1" class="badge pending">PENDING</span>
+      <span><b>Layer 1 — Tag whitelist:</b> focus on a field and interact; div/body clicks must NOT appear in log</span>
+    </div>
+    <div class="check">
+      <span id="chk-layer2" class="badge pending">PENDING</span>
+      <span><b>Layer 2 — Debounce:</b> type "hello" fast in Quantity — only ONE input event should fire (after 300ms pause)</span>
+    </div>
+    <div class="check">
+      <span id="chk-layer3" class="badge pending">PENDING</span>
+      <span><b>Layer 3 — Focus discard:</b> click Unit Price, do NOT type, click away — no event should appear</span>
+    </div>
+    <div class="check">
+      <span id="chk-copy" class="badge pending">PENDING</span>
+      <span><b>Copy from non-input:</b> select "$150.50" above and Ctrl+C — a copy event SHOULD appear</span>
+    </div>
+    <div class="check">
+      <span id="chk-paste" class="badge pending">PENDING</span>
+      <span><b>Paste:</b> paste the copied value into Unit Price — a paste event SHOULD appear</span>
+    </div>
+    <div class="check">
+      <span id="chk-select" class="badge pending">PENDING</span>
+      <span><b>Select/change:</b> pick a category — a change event SHOULD appear immediately</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── RIGHT: Event log ── -->
+<div class="panel">
+  <h2>Captured Events <span id="event-count" style="color:#6e7681; font-size:14px;">(0)</span></h2>
+  <div id="event-log"></div>
+  <button id="clear-btn" onclick="clearLog()">Clear log</button>
+
+  <div style="margin-top:24px;">
+    <h2>What to verify in each event</h2>
+    <div style="font-size:12px; color:#8b949e; line-height:1.8;">
+      Every event must have:<br>
+      &bull; <code>value</code> — non-empty, meaningful<br>
+      &bull; <code>context.label</code> — resolved from &lt;label&gt; element<br>
+      &bull; <code>context.name</code> — field name attribute<br>
+      &bull; <code>context.nearby_labels</code> — array of surrounding text<br>
+      &bull; <code>context.url</code> — current page URL<br>
+      <br>
+      The <b>input</b> event for "hello" must appear<br>
+      only ONCE after you stop typing — not 5 times.
+    </div>
+  </div>
+</div>
+
+<!-- ── inject.js loaded inline ── -->
+<script src="inject.js"></script>
+
+<script>
+  // Mock window.__arcana_push__ — what Playwright would expose
+  let eventCount = 0;
+  const log = document.getElementById('event-log');
+  const countBadge = document.getElementById('event-count');
+  const inputEventTimes = [];
+
+  window.__arcana_push__ = function (obj) {
+    eventCount++;
+    countBadge.textContent = '(' + eventCount + ')';
+
+    // ── Auto-check layers ──
+    if (obj.event === 'input')  {
+      inputEventTimes.push(Date.now());
+      document.getElementById('chk-layer1').className = 'badge pass';
+      document.getElementById('chk-layer1').textContent = 'PASS';
+      // After a short delay, check debounce (only 1 input event for rapid typing)
+      setTimeout(function () {
+        const recentInputs = inputEventTimes.filter(t => Date.now() - t < 1000);
+        if (recentInputs.length <= 1) {
+          document.getElementById('chk-layer2').className = 'badge pass';
+          document.getElementById('chk-layer2').textContent = 'PASS';
+        } else {
+          document.getElementById('chk-layer2').className = 'badge fail';
+          document.getElementById('chk-layer2').textContent = 'FAIL (' + recentInputs.length + ' events)';
+        }
+      }, 500);
+    }
+    if (obj.event === 'copy')  {
+      document.getElementById('chk-copy').className = 'badge pass';
+      document.getElementById('chk-copy').textContent = 'PASS';
+    }
+    if (obj.event === 'paste') {
+      document.getElementById('chk-paste').className = 'badge pass';
+      document.getElementById('chk-paste').textContent = 'PASS';
+    }
+    if (obj.event === 'change') {
+      document.getElementById('chk-select').className = 'badge pass';
+      document.getElementById('chk-select').textContent = 'PASS';
+    }
+
+    // ── Render event card ──
+    const div = document.createElement('div');
+    div.className = 'event-entry ' + (obj.event || '');
+
+    const colors = { copy: '#d29922', paste: '#388bfd', input: '#3fb950', change: '#bc8cff' };
+    const color = colors[obj.event] || '#8b949e';
+
+    div.innerHTML =
+      '<span class="event-type" style="color:' + color + '">' + obj.event + '</span>' +
+      ' <span class="event-val">"' + escHtml(String(obj.value || '')) + '"</span><br>' +
+      '<span class="event-meta">' +
+        'name=' + (obj.context.name || '—') + ' | ' +
+        'label="' + escHtml(obj.context.label || '') + '" | ' +
+        'nearby=[' + (obj.context.nearby_labels || []).slice(0,2).map(escHtml).join(', ') + ']' +
+      '</span>';
+
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  };
+
+  // Layer 3 check: if user clicks away from Unit Price without typing, no event fires
+  document.getElementById('f-price').addEventListener('focusin', function () {
+    const before = eventCount;
+    setTimeout(function () {}, 0); // let any sync events flush
+    document.getElementById('f-price').addEventListener('focusout', function handler() {
+      setTimeout(function () {
+        if (eventCount === before) {
+          document.getElementById('chk-layer3').className = 'badge pass';
+          document.getElementById('chk-layer3').textContent = 'PASS (no noise)';
+        }
+        document.getElementById('f-price').removeEventListener('focusout', handler);
+      }, 400); // wait past debounce window
+    });
+  }, { once: true });
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function clearLog() {
+    log.innerHTML = '';
+    eventCount = 0;
+    countBadge.textContent = '(0)';
+    inputEventTimes.length = 0;
+  }
+</script>
+</body>
+</html>
