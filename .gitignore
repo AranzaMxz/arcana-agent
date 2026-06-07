@@ -19,3 +19,6 @@ playwright-browsers/
 # OS noise
 .DS_Store
 Thumbs.db
+
+# pip bootstrap — not part of the project
+get-pip.py
