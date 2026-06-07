@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arca Continental — Alta de Inventario</title>
+    <style>
+        :root {
+            --arca-red: #C8102E;
+            --arca-dark: #1a1a2e;
+            --border: #dde2e8;
+            --bg: #f4f6f9;
+            --panel: #ffffff;
+            --label: #4a5568;
+            --readonly: #edf2f7;
+            --success: #276749;
+            --convert-bg: #fffbeb;
+            --convert-border: #f6ad55;
+            --convert-text: #92400e;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #2d3748;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .site-header {
+            background: var(--arca-red);
+            color: white;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            height: 56px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .site-header .logo {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+        }
+        .site-header .logo span { color: rgba(255,255,255,0.65); font-weight: 400; }
+        .site-header .module-name {
+            font-size: 13px;
+            opacity: 0.85;
+            border-left: 1px solid rgba(255,255,255,0.4);
+            padding-left: 20px;
+            margin-left: 4px;
+        }
+        .site-header .env-tag {
+            margin-left: auto;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 4px;
+            padding: 3px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        /* ── Page layout ── */
+        .page-wrapper {
+            max-width: 900px;
+            margin: 32px auto;
+            padding: 0 16px;
+        }
+
+        .breadcrumb {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 16px;
+        }
+        .breadcrumb span { color: var(--arca-red); }
+
+        .form-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        .form-card-header {
+            background: var(--arca-dark);
+            color: white;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .form-card-header h1 {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+        .form-card-header .status-badge {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+
+        /* ── Sections ── */
+        .section {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section:last-of-type { border-bottom: none; }
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--arca-red);
+            margin-bottom: 16px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--arca-red);
+            display: inline-block;
+        }
+
+        /* ── Field grid ── */
+        .field-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 24px;
+        }
+        .field-grid .span-2 { grid-column: span 2; }
+        .field-grid .span-3 { grid-column: span 3; }
+
+        .field-group { display: flex; flex-direction: column; gap: 5px; }
+        .field-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--label);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .field-group .field-hint {
+            font-size: 10px;
+            color: #a0aec0;
+            margin-top: -3px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 9px 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #2d3748;
+            background: white;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--arca-red);
+            box-shadow: 0 0 0 3px rgba(200,16,46,0.1);
+        }
+        input[readonly], input[readonly]:focus {
+            background: var(--readonly);
+            border-color: #cbd5e0;
+            box-shadow: none;
+            color: #4a5568;
+            cursor: default;
+        }
+
+        /* Conversion field — highlighted amber to make the ÷24 visible */
+        input.conversion-result {
+            background: var(--convert-bg);
+            border-color: var(--convert-border);
+            color: var(--convert-text);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* Conversion callout box */
+        .conversion-callout {
+            grid-column: span 2;
+            background: var(--convert-bg);
+            border: 1px solid var(--convert-border);
+            border-radius: 6px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .conversion-callout .icon { font-size: 20px; }
+        .conversion-callout .text { font-size: 12px; color: var(--convert-text); line-height: 1.5; }
+        .conversion-callout .text strong { font-weight: 700; }
+
+        /* ── Action bar ── */
+        .form-actions {
+            padding: 16px 24px;
+            background: #f8fafc;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            border-top: 1px solid var(--border);
+        }
+        .btn {
+            padding: 10px 24px;
+            border-radius: 5px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.88; }
+        .btn-primary { background: var(--arca-red); color: white; }
+        .btn-secondary { background: white; color: #4a5568; border: 1px solid var(--border); }
+        .btn-ghost { background: transparent; color: var(--label); }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 11px;
+            color: #a0aec0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="site-header">
+        <div class="logo">ARCA <span>Continental</span></div>
+        <div class="module-name">Sistema de Inventario — Alta de Artículo</div>
+        <div class="env-tag">DEMO</div>
+    </div>
+
+    <div class="page-wrapper">
+
+        <div class="breadcrumb">
+            Inventario &rsaquo; <span>Alta de Artículo</span> &rsaquo; Nuevo Registro
+        </div>
+
+        <div class="form-card">
+
+            <div class="form-card-header">
+                <h1>Alta de Artículo en Inventario</h1>
+                <span class="status-badge">Modo: Ingreso Manual</span>
+            </div>
+
+            <!-- ── Section 1: Identificación del Artículo ── -->
+            <div class="section">
+                <div class="section-title">Identificación del Artículo</div>
+                <div class="field-grid">
+                    <div class="field-group span-2">
+                        <label for="Descripcion_SKU">Descripción de SKU</label>
+                        <div class="field-hint">Nombre técnico completo del producto tal como aparece en el catálogo del proveedor</div>
+                        <input
+                            type="text"
+                            id="Descripcion_SKU"
+                            name="Descripcion_SKU"
+                            placeholder="Ej. Playera manga corta cuello redondo algodón 100%"
+                        >
+                    </div>
+                    <div class="field-group">
+                        <label for="Linea_Comercial">Línea Comercial</label>
+                        <div class="field-hint">Categoría o segmento de mercado del artículo</div>
+                        <select id="Linea_Comercial" name="Linea_Comercial">
+                            <option value="">-- Seleccionar línea --</option>
+                            <option value="Dama">Dama / Women</option>
+                            <option value="Caballero">Caballero / Men</option>
+                            <option value="Infantil">Infantil / Kids</option>
+                            <option value="Deportivo">Deportivo / Sports</option>
+                            <option value="Hogar">Hogar / Home</option>
+                            <option value="Electrónica">Electrónica</option>
+                            <option value="Accesorios">Accesorios</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label for="Proveedor_Externo">Proveedor Externo</label>
+                        <div class="field-hint">Marca o fabricante registrado en el catálogo de proveedores</div>
+                        <input
+                            type="text"
+                            id="Proveedor_Externo"
+                            name="Proveedor_Externo"
+                            placeholder="Ej. Polo Ralph Lauren"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 2: Costos ── -->
+            <div class="section">
+                <div class="section-title">Costo y Precio de Adquisición</div>
+                <div class="field-grid">
+                    <div class="field-group">
+                        <label for="Costo_Adquisicion">Costo de Adquisición (MXN)</label>
+                        <div class="field-hint">Precio unitario de compra al proveedor en pesos mexicanos</div>
+                        <input
+                            type="number"
+                            id="Costo_Adquisicion"
+                            name="Costo_Adquisicion"
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                        >
+                    </div>
+                    <div class="field-group">
+                        <label for="Presentacion">Presentación de Venta</label>
+                        <div class="field-hint">Unidad de medida para la venta final al cliente</div>
+                        <select id="Presentacion" name="Presentacion">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="Pieza">Pieza</option>
+                            <option value="Caja">Caja (24 piezas)</option>
+                            <option value="Paquete">Paquete</option>
+                            <option value="Docena">Docena</option>
+                            <option value="Litro">Litro</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 3: Existencias ── -->
+            <div class="section">
+                <div class="section-title">Registro de Existencias</div>
+                <div class="field-grid">
+
+                    <div class="field-group">
+                        <label for="Existencia_Piezas">Existencia en Piezas</label>
+                        <div class="field-hint">Cantidad total de piezas individuales recibidas del proveedor</div>
+                        <input
+                            type="number"
+                            id="Existencia_Piezas"
+                            name="Existencia_Piezas"
+                            placeholder="0"
+                            min="0"
+                            step="1"
+                        >
+                    </div>
+
+                    <div class="field-group">
+                        <label for="Cajas_Equivalentes">Cajas Equivalentes (÷ 24)</label>
+                        <div class="field-hint">Calculado: Piezas ÷ 24 — conversión estándar para distribución de bebidas</div>
+                        <input
+                            type="number"
+                            id="Cajas_Equivalentes"
+                            name="Cajas_Equivalentes"
+                            placeholder="0.00"
+                            step="0.01"
+                            readonly
+                            class="conversion-result"
+                        >
+                    </div>
+
+                    <div class="conversion-callout">
+                        <div class="icon">⚡</div>
+                        <div class="text">
+                            <strong>Regla de conversión:</strong> El campo <em>Cajas Equivalentes</em> se calcula
+                            automáticamente dividiendo las piezas entre <strong>24</strong> (factor estándar por caja
+                            para distribución Arca Continental). ARCANA debe inferir esta regla al observar el mapeo.
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="Almacen_Destino">Almacén de Destino</label>
+                        <div class="field-hint">Bodega donde se registra la entrada de inventario</div>
+                        <select id="Almacen_Destino" name="Almacen_Destino">
+                            <option value="">-- Seleccionar almacén --</option>
+                            <option value="ALM-MTY-01">ALM-MTY-01 · Monterrey Central</option>
+                            <option value="ALM-MTY-02">ALM-MTY-02 · Monterrey Norte</option>
+                            <option value="ALM-GDL-01">ALM-GDL-01 · Guadalajara</option>
+                            <option value="ALM-CDMX-01">ALM-CDMX-01 · Ciudad de México</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="Estado_Alta">Estado del Alta</label>
+                        <div class="field-hint">Estado de aprobación del registro en el sistema</div>
+                        <select id="Estado_Alta" name="Estado_Alta">
+                            <option value="Pendiente">Pendiente de aprobación</option>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                            <option value="Bloqueado">Bloqueado</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ── Section 4: Notas ── -->
+            <div class="section">
+                <div class="section-title">Observaciones</div>
+                <div class="field-group">
+                    <label for="Observaciones">Observaciones Adicionales</label>
+                    <div class="field-hint">Notas internas del registro, condiciones especiales, o aclaraciones del proveedor</div>
+                    <textarea
+                        id="Observaciones"
+                        name="Observaciones"
+                        placeholder="Ingrese observaciones opcionales..."
+                        rows="3"
+                        style="resize: vertical;"
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- ── Actions ── -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" onclick="clearForm()">Cancelar</button>
+                <button type="button" class="btn btn-secondary" onclick="clearForm()">Limpiar</button>
+                <button type="button" class="btn btn-primary" onclick="submitForm()">Dar de Alta</button>
+            </div>
+
+        </div><!-- /form-card -->
+
+        <footer>
+            Sistema de Inventario · Arca Continental &nbsp;·&nbsp;
+            URL de este formulario: <code>http://localhost:8000/mock/system_b_inventory_form.html</code>
+            &nbsp;·&nbsp; Regla de conversión activa: <strong>1 Caja = 24 Piezas</strong>
+        </footer>
+    </div>
+
+    <script>
+        // Auto-compute Cajas_Equivalentes = Existencia_Piezas / 24
+        const piezasInput = document.getElementById("Existencia_Piezas");
+        const cajasInput  = document.getElementById("Cajas_Equivalentes");
+
+        piezasInput.addEventListener("input", () => {
+            const piezas = parseFloat(piezasInput.value) || 0;
+            cajasInput.value = piezas > 0 ? (piezas / 24).toFixed(2) : "";
+        });
+
+        function clearForm() {
+            document.querySelectorAll("input:not([readonly]), select, textarea").forEach(el => {
+                el.value = "";
+            });
+            cajasInput.value = "";
+        }
+
+        function submitForm() {
+            const sku = document.getElementById("Descripcion_SKU").value.trim();
+            if (!sku) { alert("La Descripción de SKU es obligatoria."); return; }
+            const piezas = parseFloat(piezasInput.value) || 0;
+            const cajas  = parseFloat(cajasInput.value)  || 0;
+            alert(
+                `Alta registrada exitosamente.\n` +
+                `SKU: ${sku}\n` +
+                `Existencia: ${piezas} piezas = ${cajas} cajas\n` +
+                `Folio: INV-${Date.now().toString().slice(-6)}`
+            );
+        }
+    </script>
+</body>
+</html>

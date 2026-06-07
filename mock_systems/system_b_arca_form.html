@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arca Continental — Captura de Pedido</title>
+    <style>
+        :root {
+            --arca-red: #C8102E;
+            --arca-dark: #1a1a2e;
+            --border: #dde2e8;
+            --bg: #f4f6f9;
+            --panel: #ffffff;
+            --label: #4a5568;
+            --readonly: #edf2f7;
+            --success: #276749;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #2d3748;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .site-header {
+            background: var(--arca-red);
+            color: white;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            height: 56px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .site-header .logo {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+        }
+        .site-header .logo span { color: rgba(255,255,255,0.65); font-weight: 400; }
+        .site-header .module-name {
+            font-size: 13px;
+            opacity: 0.85;
+            border-left: 1px solid rgba(255,255,255,0.4);
+            padding-left: 20px;
+            margin-left: 4px;
+        }
+
+        /* ── Page layout ── */
+        .page-wrapper {
+            max-width: 860px;
+            margin: 32px auto;
+            padding: 0 16px;
+        }
+
+        .form-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+
+        .form-card-header {
+            background: var(--arca-dark);
+            color: white;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .form-card-header h1 {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+        .form-card-header .doc-num {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            font-family: monospace;
+        }
+
+        /* ── Fieldset sections ── */
+        .section {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section:last-of-type { border-bottom: none; }
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--arca-red);
+            margin-bottom: 16px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--arca-red);
+            display: inline-block;
+        }
+
+        /* ── Field grid ── */
+        .field-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px 24px;
+        }
+        .field-grid .span-2 { grid-column: span 2; }
+
+        .field-group { display: flex; flex-direction: column; gap: 5px; }
+        .field-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--label);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .field-group .field-hint {
+            font-size: 10px;
+            color: #a0aec0;
+            margin-top: -3px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 9px 12px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #2d3748;
+            background: white;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--arca-red);
+            box-shadow: 0 0 0 3px rgba(200,16,46,0.1);
+        }
+        input[readonly], input[readonly]:focus {
+            background: var(--readonly);
+            border-color: #cbd5e0;
+            box-shadow: none;
+            color: #4a5568;
+            cursor: default;
+        }
+        input.computed {
+            background: #f0fff4;
+            border-color: #9ae6b4;
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        /* ── Action bar ── */
+        .form-actions {
+            padding: 16px 24px;
+            background: #f8fafc;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            border-top: 1px solid var(--border);
+        }
+        .btn {
+            padding: 10px 24px;
+            border-radius: 5px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: opacity 0.15s;
+        }
+        .btn:hover { opacity: 0.88; }
+        .btn-primary { background: var(--arca-red); color: white; }
+        .btn-secondary { background: white; color: #4a5568; border: 1px solid var(--border); }
+
+        /* ── Totals strip ── */
+        .totals-strip {
+            display: flex;
+            justify-content: flex-end;
+            gap: 32px;
+            padding: 16px 24px;
+            background: #fafafa;
+            border-top: 1px solid var(--border);
+        }
+        .total-item { text-align: right; }
+        .total-item .lbl {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--label);
+            letter-spacing: 0.06em;
+            display: block;
+        }
+        .total-item .val {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+        .total-item.highlight .val { color: var(--arca-red); }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 11px;
+            color: #a0aec0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="site-header">
+        <div class="logo">ARCA <span>Continental</span></div>
+        <div class="module-name">Sistema de Pedidos — Módulo de Captura</div>
+    </div>
+
+    <div class="page-wrapper">
+        <div class="form-card">
+
+            <div class="form-card-header">
+                <h1>Captura de Orden de Compra</h1>
+                <span class="doc-num">PEDIDO / OCE-2025-DEMO</span>
+            </div>
+
+            <!-- ── Section 1: Datos del Comprador ── -->
+            <div class="section">
+                <div class="section-title">Datos del Comprador</div>
+                <div class="field-grid">
+                    <div class="field-group span-2">
+                        <label for="Nombre_Completo">Nombre Completo del Comprador</label>
+                        <div class="field-hint">Nombre y apellido(s) del solicitante</div>
+                        <input
+                            type="text"
+                            id="Nombre_Completo"
+                            name="Nombre_Completo"
+                            placeholder="Ej. Carlos García López"
+                        >
+                    </div>
+                    <div class="field-group">
+                        <label for="CP">Código Postal de Entrega</label>
+                        <div class="field-hint">CP del domicilio fiscal o de entrega</div>
+                        <input
+                            type="text"
+                            id="CP"
+                            name="CP"
+                            placeholder="Ej. 64460"
+                            maxlength="10"
+                        >
+                    </div>
+                    <div class="field-group">
+                        <label for="Referencia_Cliente">Referencia del Cliente</label>
+                        <div class="field-hint">Número de cuenta o clave de cliente</div>
+                        <input
+                            type="text"
+                            id="Referencia_Cliente"
+                            name="Referencia_Cliente"
+                            placeholder="Ej. CLI-00142"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 2: Detalle del Producto ── -->
+            <div class="section">
+                <div class="section-title">Detalle del Producto Solicitado</div>
+                <div class="field-grid">
+                    <div class="field-group span-2">
+                        <label for="Producto_Solicitado">Producto Solicitado</label>
+                        <div class="field-hint">Descripción completa del artículo o SKU</div>
+                        <input
+                            type="text"
+                            id="Producto_Solicitado"
+                            name="Producto_Solicitado"
+                            placeholder="Ej. Refresco Coca-Cola 600 ml PET"
+                        >
+                    </div>
+                    <div class="field-group">
+                        <label for="Cantidad_Solicitada">Cantidad Solicitada (Unidades)</label>
+                        <div class="field-hint">Número de unidades del pedido</div>
+                        <input
+                            type="number"
+                            id="Cantidad_Solicitada"
+                            name="Cantidad_Solicitada"
+                            placeholder="0"
+                            min="0"
+                            step="1"
+                        >
+                    </div>
+                    <div class="field-group">
+                        <label for="Precio_Lista">Precio de Lista (USD)</label>
+                        <div class="field-hint">Costo unitario según catálogo del proveedor</div>
+                        <input
+                            type="number"
+                            id="Precio_Lista"
+                            name="Precio_Lista"
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Section 3: Importes ── -->
+            <div class="section">
+                <div class="section-title">Cálculo de Importes</div>
+                <div class="field-grid">
+                    <div class="field-group">
+                        <label for="Subtotal_Calculado">Subtotal Calculado</label>
+                        <div class="field-hint">Calculado automáticamente: Cantidad × Precio de Lista</div>
+                        <input
+                            type="number"
+                            id="Subtotal_Calculado"
+                            name="Subtotal_Calculado"
+                            placeholder="0.00"
+                            step="0.01"
+                            readonly
+                            class="computed"
+                        >
+                    </div>
+                    <div class="field-group">
+                        <label for="Impuesto_Aplicado">Impuesto Aplicado (Tax)</label>
+                        <div class="field-hint">IVA / impuesto según factura del proveedor</div>
+                        <input
+                            type="number"
+                            id="Impuesto_Aplicado"
+                            name="Impuesto_Aplicado"
+                            placeholder="0.00"
+                            step="0.01"
+                        >
+                    </div>
+                    <div class="field-group">
+                        <label for="Total_Orden">Total de la Orden</label>
+                        <div class="field-hint">Importe total incluyendo impuestos</div>
+                        <input
+                            type="number"
+                            id="Total_Orden"
+                            name="Total_Orden"
+                            placeholder="0.00"
+                            step="0.01"
+                        >
+                    </div>
+                    <div class="field-group">
+                        <label for="Moneda">Moneda</label>
+                        <div class="field-hint">Divisa de la transacción</div>
+                        <select id="Moneda" name="Moneda">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="USD">USD — Dólar Americano</option>
+                            <option value="MXN">MXN — Peso Mexicano</option>
+                            <option value="EUR">EUR — Euro</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Actions ── -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="clearForm()">Limpiar</button>
+                <button type="button" class="btn btn-primary" onclick="submitForm()">Registrar Pedido</button>
+            </div>
+
+        </div><!-- /form-card -->
+
+        <footer>
+            Sistema de Pedidos · Arca Continental &nbsp;·&nbsp;
+            URL de este formulario: <code>http://localhost:8000/mock/system_b_arca_form.html</code>
+        </footer>
+    </div>
+
+    <script>
+        // Auto-compute Subtotal_Calculado = Cantidad_Solicitada × Precio_Lista
+        const cantidad = document.getElementById("Cantidad_Solicitada");
+        const precio   = document.getElementById("Precio_Lista");
+        const subtotal = document.getElementById("Subtotal_Calculado");
+
+        function recalcSubtotal() {
+            const q = parseFloat(cantidad.value) || 0;
+            const p = parseFloat(precio.value)   || 0;
+            subtotal.value = (q * p).toFixed(2);
+        }
+
+        cantidad.addEventListener("input", recalcSubtotal);
+        precio.addEventListener("input",   recalcSubtotal);
+
+        function clearForm() {
+            document.querySelectorAll("input:not([readonly]), select").forEach(el => {
+                el.value = el.tagName === "SELECT" ? "" : "";
+            });
+            subtotal.value = "";
+        }
+
+        function submitForm() {
+            const nombre = document.getElementById("Nombre_Completo").value.trim();
+            if (!nombre) { alert("El campo Nombre Completo es obligatorio."); return; }
+            alert("Pedido registrado exitosamente.\nFolio: OCE-" + Date.now().toString().slice(-6));
+        }
+
+        // Autofill from URL query parameters
+        window.addEventListener("DOMContentLoaded", () => {
+            const params = new URLSearchParams(window.location.search);
+            params.forEach((value, key) => {
+                const el = document.getElementById(key) || document.getElementsByName(key)[0];
+                if (el) {
+                    el.value = value;
+                    el.dispatchEvent(new Event("input", { bubbles: true }));
+                    el.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+            });
+            recalcSubtotal();
+        });
+    </script>
+</body>
+</html>
