@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OXXO VendorHub — Portal de Pedidos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#F5F4F0;
+  --surface:#FFFFFF;
+  --border:#E2E0DA;
+  --border-strong:#C8C5BC;
+  --text:#1A1916;
+  --text-muted:#6B6860;
+  --text-faint:#9B9890;
+  --accent:#D9000D;
+  --accent-bg:#FFF0F0;
+  --accent-dark:#A30009;
+  --green:#16803C;
+  --green-bg:#F0FDF4;
+  --amber:#92400E;
+  --amber-bg:#FFFBEB;
+  --font:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+
+.topbar{background:#D9000D;color:white;padding:0 32px;height:52px;display:flex;align-items:center;justify-content:space-between;}
+.topbar-brand{display:flex;align-items:center;gap:12px;}
+.brand-logo{width:32px;height:32px;background:white;border-radius:5px;display:flex;align-items:center;justify-content:center;}
+.brand-logo span{color:#D9000D;font-size:11px;font-weight:700;letter-spacing:-0.5px;}
+.brand-name{font-size:15px;font-weight:700;color:white;letter-spacing:-0.3px;}
+.brand-divider{width:1px;height:18px;background:rgba(255,255,255,0.3);}
+.brand-tag{font-size:11px;color:rgba(255,255,255,0.6);letter-spacing:1px;}
+.topbar-user{display:flex;align-items:center;gap:20px;}
+.topbar-user a{color:rgba(255,255,255,0.7);font-size:13px;text-decoration:none;}
+.user-chip{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.15);border-radius:100px;padding:4px 12px 4px 4px;}
+.user-avatar{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;}
+.user-name{font-size:12px;color:rgba(255,255,255,0.9);}
+
+.subnav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;gap:0;}
+.subnav a{display:block;padding:13px 16px;font-size:13px;color:var(--text-muted);text-decoration:none;border-bottom:2px solid transparent;font-weight:500;}
+.subnav a.active{color:var(--accent);border-bottom-color:var(--accent);}
+.subnav a:hover{color:var(--text);}
+
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 88px);}
+
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 0;}
+.sidebar-section{margin-bottom:28px;}
+.sidebar-label{font-size:10px;font-weight:600;color:var(--text-faint);letter-spacing:1.5px;text-transform:uppercase;padding:0 20px;margin-bottom:6px;}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:var(--text-muted);cursor:pointer;border-left:2px solid transparent;}
+.sidebar-item:hover{background:var(--bg);color:var(--text);}
+.sidebar-item.active{background:var(--accent-bg);color:var(--accent);border-left-color:var(--accent);font-weight:500;}
+.sidebar-item .icon{width:16px;height:16px;opacity:0.7;flex-shrink:0;}
+.badge{background:var(--accent);color:white;font-size:10px;padding:1px 7px;border-radius:100px;margin-left:auto;font-weight:600;}
+.badge.green{background:var(--green);}
+
+.main{padding:32px 40px;background:var(--bg);}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;}
+.page-title{font-size:22px;font-weight:600;letter-spacing:-0.5px;}
+.page-sub{font-size:13px;color:var(--text-muted);margin-top:3px;}
+.btn-primary{background:var(--accent);color:white;border:none;padding:9px 20px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);}
+.btn-primary:hover{background:var(--accent-dark);}
+.btn-ghost{background:transparent;border:1px solid var(--border-strong);color:var(--text);padding:9px 16px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);}
+
+.filters{display:flex;gap:10px;margin-bottom:20px;align-items:center;}
+.search-box{flex:1;max-width:280px;position:relative;}
+.search-box input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);background:var(--surface);}
+.search-box input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(217,0,13,0.08);}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-faint);}
+.filter-select{padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font);background:var(--surface);cursor:pointer;}
+
+.orders-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.orders-table{width:100%;border-collapse:collapse;}
+.orders-table th{background:#F9F8F5;padding:11px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text-faint);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.orders-table td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+.orders-table tr:last-child td{border-bottom:none;}
+.orders-table tr:hover td{background:#FAFAF8;cursor:pointer;}
+.orders-table tr.selected td{background:var(--accent-bg);}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:500;}
+.status-pill.pending{background:var(--amber-bg);color:var(--amber);}
+.status-pill.confirmed{background:var(--green-bg);color:var(--green);}
+.status-pill.new{background:var(--accent-bg);color:var(--accent);}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+.order-id{font-family:var(--mono);font-size:12px;color:var(--accent);}
+.amount{font-family:var(--mono);font-size:13px;font-weight:500;}
+
+.detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-top:20px;overflow:hidden;}
+.detail-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.detail-title{font-size:14px;font-weight:600;}
+.detail-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.detail-actions{display:flex;gap:8px;}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:1px solid var(--border);}
+.detail-field{padding:16px 20px;border-right:1px solid var(--border);}
+.detail-field:nth-child(3n){border-right:none;}
+.field-label{font-size:10px;font-weight:600;color:var(--text-faint);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+.field-value{font-size:14px;font-weight:500;}
+.field-value.mono{font-family:var(--mono);font-size:13px;}
+.items-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.items-label{font-size:12px;font-weight:600;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;}
+.items-table{width:100%;border-collapse:collapse;}
+.items-table th{background:#F9F8F5;padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text-faint);letter-spacing:1px;text-transform:uppercase;}
+.items-table th:last-child,.items-table td:last-child{text-align:right;}
+.items-table td{padding:12px 16px;border-top:1px solid var(--border);font-size:13px;}
+.item-sku{font-family:var(--mono);font-size:11px;color:var(--text-faint);}
+.item-name{font-weight:500;margin-bottom:2px;}
+.qty-cell,.price-cell,.total-cell{font-family:var(--mono);font-weight:500;}
+.total-cell{font-weight:600;}
+.totals-row{display:flex;justify-content:flex-end;padding:16px 20px;border-top:1px solid var(--border);background:#FAFAF8;}
+.totals-table tr td{padding:3px 0 3px 32px;font-size:13px;color:var(--text-muted);}
+.totals-table tr td:last-child{font-family:var(--mono);font-weight:500;color:var(--text);}
+.totals-table tr.grand td{color:var(--text);font-weight:600;font-size:15px;border-top:1px solid var(--border);padding-top:10px;}
+
+.copy-hint{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text-faint);background:var(--bg);padding:2px 7px;border-radius:4px;border:1px solid var(--border);margin-left:8px;cursor:pointer;vertical-align:middle;}
+.copy-hint:hover{border-color:var(--accent);color:var(--accent);}
+
+/* OXXO-specific: store code tag */
+.store-code{display:inline-block;background:#FFF0F0;color:var(--accent);font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid rgba(217,0,13,0.15);}
+
+.observer-badge{position:fixed;bottom:20px;right:20px;background:var(--text);color:white;border-radius:10px;padding:12px 16px;font-size:12px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.25);z-index:100;}
+.observer-dot{width:8px;height:8px;border-radius:50%;background:#4ADE80;animation:obs-pulse 1.5s ease-in-out infinite;}
+@keyframes obs-pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,0.5)}50%{opacity:0.8;box-shadow:0 0 0 5px rgba(74,222,128,0)}}
+.observer-text strong{display:block;font-weight:600;font-size:11px;}
+.observer-text span{color:rgba(255,255,255,0.5);font-size:10px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-logo"><span>OXXO</span></div>
+    <div class="brand-divider"></div>
+    <div>
+      <div class="brand-name">VendorHub <span class="brand-tag">PORTAL PROVEEDORES</span></div>
+    </div>
+  </div>
+  <div class="topbar-user">
+    <a href="#">Ayuda</a>
+    <a href="#">Centro de proveedores</a>
+    <div class="user-chip">
+      <div class="user-avatar">OX</div>
+      <div class="user-name">OXXO — Proveedor 7734-AC</div>
+    </div>
+  </div>
+</div>
+
+<nav class="subnav">
+  <a href="#">Inicio</a>
+  <a href="#" class="active">Pedidos</a>
+  <a href="#">Precios y catálogo</a>
+  <a href="#">Facturación</a>
+  <a href="#">Desempeño</a>
+  <a href="#">Configuración</a>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Pedidos</div>
+      <div class="sidebar-item active">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 8h6M5 5h6M5 11h4"/></svg>
+        Todos los pedidos <span class="badge">9</span>
+      </div>
+      <div class="sidebar-item">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+        Por surtir <span class="badge">3</span>
+      </div>
+      <div class="sidebar-item">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 5L6.5 11.5 3 8"/></svg>
+        Surtidos <span class="badge green">6</span>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Zonas</div>
+      <div class="sidebar-item">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2C5.2 2 3 4.2 3 7c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5z"/><circle cx="8" cy="7" r="1.5"/></svg>
+        Norte — Nuevo León
+      </div>
+      <div class="sidebar-item">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2C5.2 2 3 4.2 3 7c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5z"/><circle cx="8" cy="7" r="1.5"/></svg>
+        Bajío — Jalisco
+      </div>
+      <div class="sidebar-item">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2C5.2 2 3 4.2 3 7c0 4 5 9 5 9s5-5 5-9c0-2.8-2.2-5-5-5z"/><circle cx="8" cy="7" r="1.5"/></svg>
+        Sur — CDMX
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Pedidos de Reabastecimiento</div>
+        <div class="page-sub">OXXO — Red Región Norte · Semana 23, 2025 · 847 tiendas activas</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost">Exportar</button>
+        <button class="btn-primary">Nuevo pedido</button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="search-box">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+        <input type="text" placeholder="Buscar por folio, SKU, producto...">
+      </div>
+      <select class="filter-select">
+        <option>Todos los estados</option>
+        <option>Nuevo</option>
+        <option>Por surtir</option>
+        <option>Surtido</option>
+      </select>
+      <select class="filter-select">
+        <option>Todas las zonas</option>
+        <option>Norte</option>
+        <option>Bajío</option>
+        <option>Sur</option>
+      </select>
+    </div>
+
+    <div class="orders-card">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>Folio</th>
+            <th>Zona / Cluster</th>
+            <th>Fecha pedido</th>
+            <th>SKUs</th>
+            <th>Importe (MXN)</th>
+            <th>Estatus</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="selected">
+            <td><span class="order-id">OX-NL-2025-1192</span></td>
+            <td>Norte — Cluster Monterrey A</td>
+            <td>2025-06-05</td>
+            <td>4 SKUs</td>
+            <td><span class="amount">$18,940.00</span></td>
+            <td><span class="status-pill new"><span class="status-dot"></span>Nuevo</span></td>
+          </tr>
+          <tr>
+            <td><span class="order-id">OX-NL-2025-1185</span></td>
+            <td>Norte — Cluster Monterrey B</td>
+            <td>2025-06-03</td>
+            <td>5 SKUs</td>
+            <td><span class="amount">$27,380.00</span></td>
+            <td><span class="status-pill pending"><span class="status-dot"></span>Por surtir</span></td>
+          </tr>
+          <tr>
+            <td><span class="order-id">OX-JAL-2025-0994</span></td>
+            <td>Bajío — Guadalajara Sur</td>
+            <td>2025-05-31</td>
+            <td>3 SKUs</td>
+            <td><span class="amount">$11,760.00</span></td>
+            <td><span class="status-pill confirmed"><span class="status-dot"></span>Surtido</span></td>
+          </tr>
+          <tr>
+            <td><span class="order-id">OX-CDMX-2025-0881</span></td>
+            <td>Sur — CDMX Poniente</td>
+            <td>2025-05-29</td>
+            <td>6 SKUs</td>
+            <td><span class="amount">$43,200.00</span></td>
+            <td><span class="status-pill confirmed"><span class="status-dot"></span>Surtido</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- DETAIL: OX-NL-2025-1192 -->
+    <div class="detail-panel">
+      <div class="detail-header">
+        <div>
+          <div class="detail-title">
+            Folio OX-NL-2025-1192
+            <span class="status-pill new" style="margin-left:8px;font-size:11px;"><span class="status-dot"></span>Nuevo</span>
+          </div>
+          <div class="detail-sub">Generado el 5 de junio de 2025 · Entrega requerida: 10 de junio · Centro de distribución NL-04</div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn-ghost" style="font-size:12px;padding:7px 14px;">Ver historial</button>
+          <button class="btn-primary" style="font-size:12px;padding:7px 14px;">Aceptar pedido</button>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-field">
+          <div class="field-label">Folio de pedido</div>
+          <div class="field-value mono">OX-NL-2025-1192 <span class="copy-hint" onclick="copyField('OX-NL-2025-1192')">copiar</span></div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">Proveedor</div>
+          <div class="field-value">Arca Continental S.A. de C.V.</div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">Fecha de entrega</div>
+          <div class="field-value">2025-06-10 <span class="copy-hint" onclick="copyField('2025-06-10')">copiar</span></div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">Centro de distribución</div>
+          <div class="field-value"><span class="store-code">CEDIS-NL-04</span> <span class="copy-hint" onclick="copyField('CEDIS-NL-04')">copiar</span></div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">Cluster de tiendas</div>
+          <div class="field-value">Monterrey A — 142 tiendas <span class="copy-hint" onclick="copyField('Monterrey A')">copiar</span></div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">Condiciones de pago</div>
+          <div class="field-value">Neto 45 días</div>
+        </div>
+      </div>
+
+      <div class="items-header">
+        <span class="items-label">Detalle de SKUs</span>
+        <span style="font-size:12px;color:var(--text-faint);">4 SKUs · Cantidades en unidades individuales</span>
+      </div>
+
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>SKU / Producto</th>
+            <th>Categoría</th>
+            <th>Cantidad (piezas)</th>
+            <th>Precio unitario (MXN)</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="item-sku">ARC-CC-355-CAN <span class="copy-hint" onclick="copyField('ARC-CC-355-CAN')">copiar</span></div>
+              <div class="item-name">Coca-Cola 355ml Lata</div>
+            </td>
+            <td><span style="font-size:12px;">Bebidas carbonatadas <span class="copy-hint" onclick="copyField('Bebidas carbonatadas')">copiar</span></span></td>
+            <td class="qty-cell">1440 <span class="copy-hint" onclick="copyField('1440')">copiar</span></td>
+            <td class="price-cell">$7.80 <span class="copy-hint" onclick="copyField('7.80')">copiar</span></td>
+            <td class="total-cell">$11,232.00</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="item-sku">ARC-SP-600-PET <span class="copy-hint" onclick="copyField('ARC-SP-600-PET')">copiar</span></div>
+              <div class="item-name">Sprite 600ml PET</div>
+            </td>
+            <td><span style="font-size:12px;">Bebidas carbonatadas <span class="copy-hint" onclick="copyField('Bebidas carbonatadas')">copiar</span></span></td>
+            <td class="qty-cell">480 <span class="copy-hint" onclick="copyField('480')">copiar</span></td>
+            <td class="price-cell">$8.50 <span class="copy-hint" onclick="copyField('8.50')">copiar</span></td>
+            <td class="total-cell">$4,080.00</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="item-sku">ARC-PWD-600-PET <span class="copy-hint" onclick="copyField('ARC-PWD-600-PET')">copiar</span></div>
+              <div class="item-name">Powerade Mora Azul 600ml</div>
+            </td>
+            <td><span style="font-size:12px;">Bebidas deportivas <span class="copy-hint" onclick="copyField('Bebidas deportivas')">copiar</span></span></td>
+            <td class="qty-cell">240 <span class="copy-hint" onclick="copyField('240')">copiar</span></td>
+            <td class="price-cell">$12.50 <span class="copy-hint" onclick="copyField('12.50')">copiar</span></td>
+            <td class="total-cell">$3,000.00</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="item-sku">ARC-CIE-500-PET <span class="copy-hint" onclick="copyField('ARC-CIE-500-PET')">copiar</span></div>
+              <div class="item-name">Ciel Mineralizada 500ml</div>
+            </td>
+            <td><span style="font-size:12px;">Agua <span class="copy-hint" onclick="copyField('Agua')">copiar</span></span></td>
+            <td class="qty-cell">480 <span class="copy-hint" onclick="copyField('480')">copiar</span></td>
+            <td class="price-cell">$5.50 <span class="copy-hint" onclick="copyField('5.50')">copiar</span></td>
+            <td class="total-cell">$2,640.00</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals-row">
+        <table class="totals-table">
+          <tr><td>Subtotal</td><td>$20,952.00</td></tr>
+          <tr><td>IVA (16%)</td><td>$3,352.32</td></tr>
+          <tr class="grand"><td>Total pedido</td><td>$24,304.32</td></tr>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="observer-badge">
+  <div class="observer-dot"></div>
+  <div class="observer-text">
+    <strong>ARCANA Observando</strong>
+    <span>Registrando eventos del Sistema A</span>
+  </div>
+</div>
+
+<script>
+function copyField(val) {
+  navigator.clipboard.writeText(val).catch(() => {
+    const el = document.createElement('textarea');
+    el.value = val;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  });
+  console.log('[ARCANA · System A · OXXO] copy →', val);
+  const btn = window.event?.target;
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = '✓';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1200);
+  }
+}
+document.addEventListener('copy', (e) => {
+  const sel = window.getSelection()?.toString();
+  if (sel) console.log('[ARCANA · System A · OXXO] selection copy →', sel.trim());
+});
+</script>
+</body>
+</html>

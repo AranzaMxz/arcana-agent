@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCA SAP — Registro de Pedidos Clientes</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#ECEEF2;
+  --surface:#FFFFFF;
+  --surface2:#F4F5F7;
+  --border:#D0D4DC;
+  --border-strong:#B0B5C0;
+  --text:#111318;
+  --text-muted:#555C6A;
+  --text-faint:#8A919E;
+  --arca:#E31837;
+  --arca-dark:#B0101F;
+  --arca-bg:#FDF0F2;
+  --blue:#1A56DB;
+  --blue-bg:#EBF5FF;
+  --green:#0E7A3D;
+  --green-bg:#ECFDF5;
+  --amber:#B45309;
+  --amber-bg:#FFFBEB;
+  --font:'IBM Plex Sans',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;}
+
+/* ENTERPRISE HEADER */
+.topbar{
+  background:linear-gradient(90deg, #111318 0%, #1E2230 100%);
+  padding:0 0 0 0;
+  display:flex;flex-direction:column;
+}
+.topbar-main{
+  padding:0 28px;height:48px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.brand{display:flex;align-items:center;gap:0;}
+.brand-arca{
+  background:var(--arca);
+  padding:0 16px;height:48px;display:flex;align-items:center;
+  margin-right:16px;
+}
+.brand-arca span{color:white;font-size:16px;font-weight:700;letter-spacing:1px;}
+.brand-system{
+  display:flex;flex-direction:column;
+}
+.brand-sys-name{color:white;font-size:13px;font-weight:600;letter-spacing:-0.2px;}
+.brand-sys-ver{color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:1px;}
+.topbar-info{display:flex;align-items:center;gap:24px;}
+.info-chip{display:flex;align-items:center;gap:6px;color:rgba(255,255,255,0.45);font-size:11px;}
+.info-chip strong{color:rgba(255,255,255,0.8);font-weight:500;}
+.topbar-user-row{
+  padding:0 28px;height:32px;background:rgba(0,0,0,0.2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,0.4);}
+.breadcrumb span{color:rgba(255,255,255,0.65);}
+.breadcrumb-sep{color:rgba(255,255,255,0.2);}
+.topbar-actions{display:flex;gap:16px;}
+.topbar-actions a{font-size:11px;color:rgba(255,255,255,0.4);text-decoration:none;}
+.topbar-actions a:hover{color:rgba(255,255,255,0.7);}
+
+/* TOOLBAR */
+.toolbar{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0 28px;
+  display:flex;align-items:center;
+  height:44px;gap:4px;
+}
+.tb-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 12px;border-radius:4px;font-size:12px;font-weight:500;
+  background:transparent;border:none;cursor:pointer;color:var(--text-muted);
+  font-family:var(--font);
+}
+.tb-btn:hover{background:var(--surface2);color:var(--text);}
+.tb-btn.primary{background:var(--arca);color:white;}
+.tb-btn.primary:hover{background:var(--arca-dark);}
+.tb-btn svg{width:14px;height:14px;flex-shrink:0;}
+.tb-sep{width:1px;height:24px;background:var(--border);margin:0 4px;}
+.tb-status{
+  margin-left:auto;display:flex;align-items:center;gap:8px;
+  background:var(--green-bg);border:1px solid rgba(14,122,61,0.2);
+  border-radius:4px;padding:4px 10px;
+  font-size:11px;color:var(--green);font-weight:500;
+}
+.tb-status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 124px);}
+
+/* LEFT NAV */
+.leftnav{background:var(--surface);border-right:1px solid var(--border);padding:0;}
+.nav-group{border-bottom:1px solid var(--border);}
+.nav-group-header{
+  padding:10px 16px 6px;
+  font-size:10px;font-weight:600;color:var(--text-faint);letter-spacing:1.2px;text-transform:uppercase;
+}
+.nav-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 16px;font-size:12px;color:var(--text-muted);cursor:pointer;
+  border-left:3px solid transparent;
+}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--arca-bg);color:var(--arca);border-left-color:var(--arca);font-weight:500;}
+.nav-item svg{width:14px;height:14px;flex-shrink:0;opacity:0.7;}
+.nav-badge{margin-left:auto;background:var(--arca);color:white;font-size:9px;padding:1px 6px;border-radius:100px;font-weight:600;}
+
+/* MAIN CONTENT */
+.main{padding:0;display:flex;flex-direction:column;}
+
+/* FORM TABS */
+.form-tabs{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 28px;display:flex;gap:0;
+}
+.form-tab{
+  padding:11px 16px;font-size:12px;font-weight:500;color:var(--text-faint);
+  cursor:pointer;border-bottom:2px solid transparent;
+}
+.form-tab.active{color:var(--arca);border-bottom-color:var(--arca);}
+
+.form-body{padding:24px 28px;flex:1;}
+
+/* SECTION BLOCKS */
+.form-section{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;margin-bottom:16px;overflow:hidden;
+}
+.section-header{
+  background:var(--surface2);
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.section-title{font-size:12px;font-weight:600;color:var(--text);letter-spacing:0.2px;text-transform:uppercase;}
+.section-sub{font-size:11px;color:var(--text-faint);}
+.section-badge{
+  font-size:10px;padding:2px 8px;border-radius:3px;font-weight:500;
+  background:var(--amber-bg);color:var(--amber);border:1px solid rgba(180,83,9,0.2);
+}
+.section-badge.ok{background:var(--green-bg);color:var(--green);border-color:rgba(14,122,61,0.2);}
+
+/* FIELD GRID */
+.field-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0;}
+.field-block{padding:14px 16px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.field-block:nth-child(3n){border-right:none;}
+.field-block:nth-last-child(-n+3){border-bottom:none;}
+.field-block:last-child{border-bottom:none;}
+
+/* Adjust for 2-col rows */
+.field-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.field-grid-2 .field-block{border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.field-grid-2 .field-block:nth-child(2n){border-right:none;}
+.field-grid-2 .field-block:last-child,.field-grid-2 .field-block:nth-last-child(2){border-bottom:none;}
+
+.fl{font-size:10px;font-weight:600;color:var(--text-faint);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:4px;}
+.fl .req{color:var(--arca);}
+.fi{
+  width:100%;padding:7px 10px;
+  border:1px solid var(--border);border-radius:4px;
+  font-size:13px;font-family:var(--font);color:var(--text);
+  background:white;
+}
+.fi:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(26,86,219,0.12);}
+.fi.mono{font-family:var(--mono);font-size:12px;}
+.fi:read-only{background:var(--surface2);color:var(--text-muted);cursor:default;}
+select.fi{cursor:pointer;}
+
+/* LINES TABLE */
+.lines-table{width:100%;border-collapse:collapse;}
+.lines-table th{
+  background:var(--surface2);padding:9px 12px;
+  text-align:left;font-size:10px;font-weight:600;color:var(--text-faint);
+  letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border);
+}
+.lines-table td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.lines-table tr:last-child td{border-bottom:none;}
+.lines-table tr:hover td{background:#FAFBFC;}
+.lines-table th:last-child,.lines-table td:last-child{text-align:right;}
+
+.line-input{
+  width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;
+  font-size:12px;font-family:var(--mono);text-align:right;
+  background:white;color:var(--text);
+}
+.line-input:focus{outline:none;border-color:var(--blue);}
+.line-readonly{
+  display:block;font-family:var(--mono);font-size:12px;
+  color:var(--text-muted);text-align:right;
+}
+.sku-display{font-family:var(--mono);font-size:11px;color:var(--text-faint);}
+.prod-name{font-size:13px;font-weight:500;color:var(--text);}
+.cat-tag{
+  display:inline-block;background:var(--blue-bg);color:var(--blue);
+  font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500;
+}
+
+/* TOTALS */
+.totals-bar{
+  display:flex;justify-content:flex-end;align-items:center;gap:0;
+  padding:14px 16px;background:var(--surface2);border-top:1px solid var(--border);
+}
+.total-item{text-align:right;padding:0 20px;border-right:1px solid var(--border);}
+.total-item:last-child{border-right:none;padding-right:0;}
+.total-lbl{font-size:10px;color:var(--text-faint);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px;}
+.total-val{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text);}
+.total-val.grand{color:var(--arca);font-size:17px;}
+
+/* STATUS BAR */
+.statusbar{
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:6px 28px;display:flex;align-items:center;gap:20px;
+  font-size:11px;color:var(--text-faint);
+}
+.statusbar span strong{color:var(--text-muted);}
+
+/* PASTE INDICATOR */
+.paste-hint{
+  position:fixed;bottom:20px;right:20px;
+  background:#111318;color:white;border-radius:8px;
+  padding:10px 14px;font-size:11px;display:flex;align-items:center;gap:8px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:100;
+  opacity:0;transform:translateY(6px);transition:all 0.2s;pointer-events:none;
+}
+.paste-hint.show{opacity:1;transform:translateY(0);}
+.paste-dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;animation:pdot 1.5s ease-in-out infinite;}
+@keyframes pdot{0%,100%{opacity:1}50%{opacity:0.4}}
+
+.observer-badge{position:fixed;bottom:20px;left:220px;background:#111318;color:white;border-radius:10px;padding:12px 16px;font-size:12px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.25);z-index:100;}
+.observer-dot{width:8px;height:8px;border-radius:50%;background:#4ADE80;animation:obs-pulse 1.5s ease-in-out infinite;}
+@keyframes obs-pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(74,222,128,0.5)}50%{opacity:0.8;box-shadow:0 0 0 5px rgba(74,222,128,0)}}
+.observer-text strong{display:block;font-weight:600;font-size:11px;}
+.observer-text span{color:rgba(255,255,255,0.5);font-size:10px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-main">
+    <div class="brand">
+      <div class="brand-arca"><span>ARCA</span></div>
+      <div class="brand-system">
+        <div class="brand-sys-name">Sistema de Gestión Comercial</div>
+        <div class="brand-sys-ver">SGC v4.2.1 · MÓDULO PEDIDOS</div>
+      </div>
+    </div>
+    <div class="topbar-info">
+      <div class="info-chip"><strong>Usuario:</strong> ops.norte@arcacontal.com</div>
+      <div class="info-chip"><strong>Planta:</strong> Monterrey Norte</div>
+      <div class="info-chip"><strong>Sesión:</strong> 2025-06-05 09:41</div>
+    </div>
+  </div>
+  <div class="topbar-user-row">
+    <div class="breadcrumb">
+      <span>Inicio</span><span class="breadcrumb-sep">›</span>
+      <span>Comercial</span><span class="breadcrumb-sep">›</span>
+      <span>Pedidos de Clientes</span><span class="breadcrumb-sep">›</span>
+      <span style="color:rgba(255,255,255,0.85);font-weight:500;">Captura nuevo pedido</span>
+    </div>
+    <div class="topbar-actions">
+      <a href="#">Ayuda</a>
+      <a href="#">Manual de usuario</a>
+      <a href="#">Cerrar sesión</a>
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <button class="tb-btn primary">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7h10M7 2v10"/></svg>
+    Guardar pedido
+  </button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h10M2 7h7M2 10h5"/></svg>
+    Vista previa
+  </button>
+  <button class="tb-btn">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 9l-4 4-4-4M7 13V2"/><path d="M2 2h10"/></svg>
+    Exportar XML
+  </button>
+  <button class="tb-btn">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="1.5" width="11" height="11" rx="1"/><path d="M4 7h6M4 4.5h6M4 9.5h4"/></svg>
+    Duplicar
+  </button>
+  <div class="tb-sep"></div>
+  <button class="tb-btn">
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12L12 2M2 2l10 10"/></svg>
+    Cancelar
+  </button>
+  <div class="tb-status">
+    <div class="tb-status-dot"></div>
+    Borrador activo
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="leftnav">
+    <div class="nav-group">
+      <div class="nav-group-header">Pedidos</div>
+      <div class="nav-item active">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h10v10H2z"/><path d="M5 7h4M5 5h4M5 9h2"/></svg>
+        Captura nuevo pedido
+        <span class="nav-badge">1</span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M7 4.5V7l2 1.5"/></svg>
+        Pedidos pendientes
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7h10M7 2v10"/></svg>
+        Historial
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-header">Catálogos</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="10" height="8" rx="1"/><path d="M5 3V2M9 3V2"/></svg>
+        Clientes
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10L5 4l3 4 2-3 2 5"/></svg>
+        Productos
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 2L2 5v7h10V5z"/><path d="M5 12V8h4v4"/></svg>
+        Listas de precios
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-header">Reportes</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10L5 7l3 2 4-5"/></svg>
+        Ventas por cliente
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="4" height="10" rx="0.5"/><rect x="8" y="5" width="4" height="7" rx="0.5"/></svg>
+        Volumen semanal
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="form-tabs">
+      <div class="form-tab active">Datos del pedido</div>
+      <div class="form-tab">Líneas de producto</div>
+      <div class="form-tab">Logística y entrega</div>
+      <div class="form-tab">Notas internas</div>
+    </div>
+
+    <div class="form-body">
+
+      <!-- ENCABEZADO DEL PEDIDO -->
+      <div class="form-section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Encabezado del pedido</div>
+            <div class="section-sub">Identificación y datos del cliente</div>
+          </div>
+          <span class="section-badge">Campos requeridos</span>
+        </div>
+        <div class="field-grid">
+          <div class="field-block">
+            <label class="fl" for="num_pedido">No. Pedido interno <span class="req">*</span></label>
+            <input class="fi mono" id="num_pedido" name="num_pedido" placeholder="Autogenerado al guardar" readonly value="">
+          </div>
+          <div class="field-block">
+            <label class="fl" for="ref_cliente">Referencia del cliente <span class="req">*</span></label>
+            <input class="fi mono" id="ref_cliente" name="ref_cliente" placeholder="Ej. OX-NL-2025-1192">
+          </div>
+          <div class="field-block">
+            <label class="fl" for="fecha_captura">Fecha de captura</label>
+            <input class="fi" id="fecha_captura" name="fecha_captura" type="date" value="2025-06-05" readonly>
+          </div>
+          <div class="field-block">
+            <label class="fl" for="cve_cliente">Clave de cliente <span class="req">*</span></label>
+            <input class="fi mono" id="cve_cliente" name="cve_cliente" placeholder="Ej. OXXO-NL-001">
+          </div>
+          <div class="field-block">
+            <label class="fl" for="nombre_cliente">Nombre del cliente</label>
+            <input class="fi" id="nombre_cliente" name="nombre_cliente" placeholder="Nombre o razón social">
+          </div>
+          <div class="field-block">
+            <label class="fl" for="fecha_entrega">Fecha compromiso entrega <span class="req">*</span></label>
+            <input class="fi" id="fecha_entrega" name="fecha_entrega" type="date" placeholder="">
+          </div>
+        </div>
+      </div>
+
+      <!-- CONDICIONES COMERCIALES -->
+      <div class="form-section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Condiciones comerciales</div>
+          </div>
+          <span class="section-badge ok">Predeterminadas del cliente</span>
+        </div>
+        <div class="field-grid-2">
+          <div class="field-block">
+            <label class="fl" for="condicion_pago">Condición de pago</label>
+            <select class="fi" id="condicion_pago" name="condicion_pago">
+              <option>Neto 30 días</option>
+              <option>Neto 45 días</option>
+              <option>Contado</option>
+            </select>
+          </div>
+          <div class="field-block">
+            <label class="fl" for="cedis_destino">Centro de distribución destino</label>
+            <input class="fi mono" id="cedis_destino" name="cedis_destino" placeholder="Ej. CEDIS-NL-04">
+          </div>
+        </div>
+      </div>
+
+      <!-- LÍNEAS DE PRODUCTO -->
+      <div class="form-section">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Líneas de producto</div>
+            <div class="section-sub">Las cantidades se registran en cajas (24 unidades = 1 caja)</div>
+          </div>
+          <button class="tb-btn" style="font-size:11px;padding:4px 10px;border:1px solid var(--border);">+ Agregar línea</button>
+        </div>
+
+        <table class="lines-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Código de artículo</th>
+              <th>Descripción del producto</th>
+              <th>Familia</th>
+              <th>Cant. cajas</th>
+              <th>Precio por caja</th>
+              <th>Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color:var(--text-faint);font-size:11px;">01</td>
+              <td>
+                <input class="line-input" id="cod_art_1" name="cod_art_1" placeholder="Cód. artículo" style="text-align:left;width:130px;">
+                <div class="sku-display" id="sku_hint_1" style="margin-top:3px;display:none;"></div>
+              </td>
+              <td>
+                <input class="line-input" id="desc_prod_1" name="desc_prod_1" placeholder="Descripción" style="text-align:left;width:180px;">
+              </td>
+              <td>
+                <select class="line-input" id="familia_1" name="familia_1" style="text-align:left;width:130px;">
+                  <option value="">— Familia —</option>
+                  <option>Refrescos</option>
+                  <option>Bebidas carbonatadas</option>
+                  <option>Bebidas deportivas</option>
+                  <option>Agua</option>
+                  <option>Jugos</option>
+                  <option>Energéticas</option>
+                </select>
+              </td>
+              <td><input class="line-input" id="cant_cajas_1" name="cant_cajas_1" type="number" placeholder="0" min="0" oninput="calcLine(1)"></td>
+              <td><input class="line-input" id="precio_caja_1" name="precio_caja_1" type="number" step="0.01" placeholder="0.00" min="0" oninput="calcLine(1)"></td>
+              <td><span class="line-readonly" id="importe_1">—</span></td>
+            </tr>
+            <tr>
+              <td style="color:var(--text-faint);font-size:11px;">02</td>
+              <td><input class="line-input" id="cod_art_2" name="cod_art_2" placeholder="Cód. artículo" style="text-align:left;width:130px;"></td>
+              <td><input class="line-input" id="desc_prod_2" name="desc_prod_2" placeholder="Descripción" style="text-align:left;width:180px;"></td>
+              <td>
+                <select class="line-input" id="familia_2" name="familia_2" style="text-align:left;width:130px;">
+                  <option value="">— Familia —</option>
+                  <option>Refrescos</option>
+                  <option>Bebidas carbonatadas</option>
+                  <option>Bebidas deportivas</option>
+                  <option>Agua</option>
+                  <option>Jugos</option>
+                  <option>Energéticas</option>
+                </select>
+              </td>
+              <td><input class="line-input" id="cant_cajas_2" name="cant_cajas_2" type="number" placeholder="0" min="0" oninput="calcLine(2)"></td>
+              <td><input class="line-input" id="precio_caja_2" name="precio_caja_2" type="number" step="0.01" placeholder="0.00" min="0" oninput="calcLine(2)"></td>
+              <td><span class="line-readonly" id="importe_2">—</span></td>
+            </tr>
+            <tr>
+              <td style="color:var(--text-faint);font-size:11px;">03</td>
+              <td><input class="line-input" id="cod_art_3" name="cod_art_3" placeholder="Cód. artículo" style="text-align:left;width:130px;"></td>
+              <td><input class="line-input" id="desc_prod_3" name="desc_prod_3" placeholder="Descripción" style="text-align:left;width:180px;"></td>
+              <td>
+                <select class="line-input" id="familia_3" name="familia_3" style="text-align:left;width:130px;">
+                  <option value="">— Familia —</option>
+                  <option>Refrescos</option>
+                  <option>Bebidas carbonatadas</option>
+                  <option>Bebidas deportivas</option>
+                  <option>Agua</option>
+                  <option>Jugos</option>
+                  <option>Energéticas</option>
+                </select>
+              </td>
+              <td><input class="line-input" id="cant_cajas_3" name="cant_cajas_3" type="number" placeholder="0" min="0" oninput="calcLine(3)"></td>
+              <td><input class="line-input" id="precio_caja_3" name="precio_caja_3" type="number" step="0.01" placeholder="0.00" min="0" oninput="calcLine(3)"></td>
+              <td><span class="line-readonly" id="importe_3">—</span></td>
+            </tr>
+            <tr>
+              <td style="color:var(--text-faint);font-size:11px;">04</td>
+              <td><input class="line-input" id="cod_art_4" name="cod_art_4" placeholder="Cód. artículo" style="text-align:left;width:130px;"></td>
+              <td><input class="line-input" id="desc_prod_4" name="desc_prod_4" placeholder="Descripción" style="text-align:left;width:180px;"></td>
+              <td>
+                <select class="line-input" id="familia_4" name="familia_4" style="text-align:left;width:130px;">
+                  <option value="">— Familia —</option>
+                  <option>Refrescos</option>
+                  <option>Bebidas carbonatadas</option>
+                  <option>Bebidas deportivas</option>
+                  <option>Agua</option>
+                  <option>Jugos</option>
+                  <option>Energéticas</option>
+                </select>
+              </td>
+              <td><input class="line-input" id="cant_cajas_4" name="cant_cajas_4" type="number" placeholder="0" min="0" oninput="calcLine(4)"></td>
+              <td><input class="line-input" id="precio_caja_4" name="precio_caja_4" type="number" step="0.01" placeholder="0.00" min="0" oninput="calcLine(4)"></td>
+              <td><span class="line-readonly" id="importe_4">—</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="totals-bar">
+          <div class="total-item">
+            <div class="total-lbl">Total cajas</div>
+            <div class="total-val" id="total-cajas">0</div>
+          </div>
+          <div class="total-item">
+            <div class="total-lbl">Subtotal</div>
+            <div class="total-val" id="total-sub">$0.00</div>
+          </div>
+          <div class="total-item">
+            <div class="total-lbl">IVA 16%</div>
+            <div class="total-val" id="total-iva">$0.00</div>
+          </div>
+          <div class="total-item">
+            <div class="total-lbl">Total MXN</div>
+            <div class="total-val grand" id="total-grand">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /form-body -->
+
+    <div class="statusbar">
+      <span>Pedido: <strong>sin guardar</strong></span>
+      <span>Líneas capturadas: <strong id="sb-lines">0</strong></span>
+      <span>Total cajas: <strong id="sb-cajas">0</strong></span>
+      <span style="margin-left:auto;">SGC v4.2.1 · Planta Monterrey Norte</span>
+    </div>
+  </div>
+</div>
+
+<div class="paste-hint" id="paste-hint">
+  <div class="paste-dot"></div>
+  <span id="paste-msg">Campo actualizado</span>
+</div>
+
+<div class="observer-badge">
+  <div class="observer-dot"></div>
+  <div class="observer-text">
+    <strong>ARCANA Observando</strong>
+    <span>Registrando eventos del Sistema B</span>
+  </div>
+</div>
+
+<script>
+function calcLine(n) {
+  const qty = parseFloat(document.getElementById('cant_cajas_'+n)?.value) || 0;
+  const price = parseFloat(document.getElementById('precio_caja_'+n)?.value) || 0;
+  const imp = qty * price;
+  const el = document.getElementById('importe_'+n);
+  if (el) el.textContent = imp > 0 ? '$'+imp.toFixed(2) : '—';
+  calcTotals();
+}
+
+function calcTotals() {
+  let sub = 0, cajas = 0, lines = 0;
+  for (let i = 1; i <= 4; i++) {
+    const qty = parseFloat(document.getElementById('cant_cajas_'+i)?.value) || 0;
+    const price = parseFloat(document.getElementById('precio_caja_'+i)?.value) || 0;
+    sub += qty * price;
+    cajas += qty;
+    if (qty > 0) lines++;
+  }
+  const iva = sub * 0.16;
+  document.getElementById('total-cajas').textContent = cajas;
+  document.getElementById('total-sub').textContent = '$'+sub.toFixed(2);
+  document.getElementById('total-iva').textContent = '$'+iva.toFixed(2);
+  document.getElementById('total-grand').textContent = '$'+(sub+iva).toFixed(2);
+  document.getElementById('sb-lines').textContent = lines;
+  document.getElementById('sb-cajas').textContent = cajas;
+}
+
+function showPasteHint(msg) {
+  const el = document.getElementById('paste-hint');
+  const txt = document.getElementById('paste-msg');
+  txt.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// Log all focus/input/paste events for ARCANA
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('focus', () => {
+    console.log('[ARCANA · System B] focus →', el.id || el.name || el.placeholder);
+  });
+  el.addEventListener('paste', (e) => {
+    const val = e.clipboardData?.getData('text') || '';
+    console.log('[ARCANA · System B] paste →', el.id, '=', val);
+    showPasteHint('Pegado en ' + (el.id || 'campo'));
+  });
+  el.addEventListener('change', () => {
+    console.log('[ARCANA · System B] change →', el.id, '=', el.value);
+  });
+});
+</script>
+</body>
+</html>

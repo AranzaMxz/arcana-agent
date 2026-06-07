@@ -301,6 +301,7 @@ class AutomationEngine:
             "field_id": field_id,
             "source_label": source_label,
             "dest_label": dest_label,
+            "reason": reason,
             "message": f"⚠ Skipped '{source_label}' → '{dest_label}': {reason}",
         })
         return {
