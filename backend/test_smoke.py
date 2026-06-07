@@ -155,5 +155,37 @@ except ImportError as e:
 
 
 print("=" * 60)
+print("5. Testing brain.py — live Gemini Pro call (uses API key)")
+print("=" * 60)
+import asyncio
+
+async def test_brain():
+    from app.arcanum.brain import run_learning_phase
+
+    events = []
+    async def capture(msg):
+        events.append(msg)
+        print(f"  [WS] {msg.get('type')} | {msg.get('message','')[:80]}")
+
+    result = await run_learning_phase(fake_trace, capture)
+
+    rg = result["rule_graph"]
+    print(f"\n  Rules returned : {len(rg['mappings'])}")
+    for m in rg["mappings"]:
+        conf = m["confidence"]
+        color = "HIGH" if conf >= 0.85 else ("MED" if conf >= 0.70 else "LOW")
+        print(f"  [{color} {conf:.2f}] {m['source']['label_hint']} → {m['destination']['label_hint']}")
+        print(f"           {m['reasoning'][:120]}...")
+    print()
+
+    phase_types = [e["status"] for e in events if e.get("type") == "phase_status"]
+    assert "reasoning" in phase_types, "phase_status 'reasoning' not broadcast"
+    assert "complete"  in phase_types, "phase_status 'complete' not broadcast"
+    assert len(rg["mappings"]) > 0, "No mappings returned"
+    print("  [PASS] brain.py — live Gemini Pro call succeeded\n")
+
+asyncio.run(test_brain())
+
+print("=" * 60)
 print("ALL SMOKE TESTS PASSED")
 print("=" * 60)
